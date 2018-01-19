@@ -1,0 +1,9 @@
+.const VIC2 = $d000
+.const screen_ram      = $0400     // location of screen ram
+.const init_sid        = $11ed     // init routine for music
+.const play_sid        = $1004     // play music routine
+.const delay_counter   = $90       // used to time color switch in the border
+.const pra             = $dc00     // CIA#1 (Port Register A)
+.const prb             = $dc01     // CIA#1 (Port Register B)
+.const ddra            = $dc02     // CIA#1 (Data Direction Register A)
+.const ddrb            = $dc03     // CIA#1 (Data Direction Register B)
