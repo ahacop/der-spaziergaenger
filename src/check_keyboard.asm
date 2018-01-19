@@ -54,23 +54,27 @@ go_down:
   inc sprites.positions + 1
   rts
 
-go_left:
-  lda #address_sprites_pointer
-  sta sprites.pointers
-  lda sprites.positions
-  cmp #BORDER_LEFT
-  beq skip
-  dec sprites.positions
-  rts
-
 go_right:
   lda #address_sprites_pointer + 1
   sta sprites.pointers
-  lda sprites.positions
-  cmp #$ff
-  beq skip
-  inc sprites.positions
+  ldx sprites.positions
+  inx
+  bne not_boundary
+toggle_high_bit:
+  lda sprites.position_x_high_bits
+  eor #$01
+  sta sprites.position_x_high_bits
+not_boundary:
+  stx sprites.positions
   rts
+go_left:
+  lda #address_sprites_pointer
+  sta sprites.pointers
+  ldx sprites.positions
+  dex
+  cpx #$ff
+  bne not_boundary
+  jmp toggle_high_bit
 
 exit_to_basic:
   lda #$00
