@@ -2,8 +2,6 @@
 .const BORDER_TOP = 50
 .const DOUBLE_SPRITE_WIDTH = 24*2
 .const DOUBLE_SPRITE_HEIGHT = 21*2
-.const LEFT_FRAME_INDEX = 256 - 2
-.const RIGHT_FRAME_INDEX = 256 - 1
 .const address_sprites_pointer = address_sprites / $40
 
 .namespace sprites {
