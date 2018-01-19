@@ -1,7 +1,5 @@
 .const BORDER_LEFT = 25
 .const BORDER_TOP = 50
-.const DOUBLE_SPRITE_WIDTH = 24*2
-.const DOUBLE_SPRITE_HEIGHT = 21*2
 .const address_sprites_pointer = address_sprites / $40
 
 .namespace sprites {
@@ -22,14 +20,8 @@ setup_player_sprite:
   sta sprites.enable_bits
   ldx #BORDER_LEFT + 2 + 32
   stx sprites.positions
-  stx sprites.positions + 8
   ldy #BORDER_TOP + 2 + 32
   sty sprites.positions + 1
-  ldy #BORDER_TOP + DOUBLE_SPRITE_HEIGHT + 4
-  sty sprites.positions + 9
-  lda #1
-  sta sprites.colors
-  sta sprites.colors + 4
 
   lda #address_sprites_pointer
   sta sprites.pointers
