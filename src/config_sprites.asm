@@ -1,5 +1,5 @@
-.const BORDER_LEFT = 25
-.const BORDER_TOP = 50
+.const BORDER_LEFT = 22
+.const BORDER_TOP = 42
 .const address_sprites_pointer = address_sprites / $40
 
 .namespace sprites {
