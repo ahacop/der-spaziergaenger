@@ -55,6 +55,8 @@ go_down:
   rts
 
 go_left:
+  lda #address_sprites_pointer
+  sta sprites.pointers
   lda sprites.positions
   cmp #BORDER_LEFT
   beq skip
@@ -62,6 +64,8 @@ go_left:
   rts
 
 go_right:
+  lda #address_sprites_pointer + 1
+  sta sprites.pointers
   lda sprites.positions
   cmp #$ff
   beq skip

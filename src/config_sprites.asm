@@ -2,6 +2,9 @@
 .const BORDER_TOP = 50
 .const DOUBLE_SPRITE_WIDTH = 24*2
 .const DOUBLE_SPRITE_HEIGHT = 21*2
+.const LEFT_FRAME_INDEX = 256 - 2
+.const RIGHT_FRAME_INDEX = 256 - 1
+.const address_sprites_pointer = address_sprites / $40
 
 .namespace sprites {
   .label positions = VIC2
@@ -19,38 +22,36 @@
 setup_player_sprite:
   lda #%00000001
   sta sprites.enable_bits
-  .for (var i = 0; i < 1; i++) {
-    ldx #BORDER_LEFT + 2 + [DOUBLE_SPRITE_WIDTH+2]*i + 32
-    stx sprites.positions + 2*i + 0
-    stx sprites.positions + 2*i + 8
-    ldy #BORDER_TOP + 2 + 32
-    sty sprites.positions + 2*i + 1
-    ldy #BORDER_TOP + DOUBLE_SPRITE_HEIGHT + 4
-    sty sprites.positions + 2*i + 9
-    lda #i + 1
-    sta sprites.colors + i
-    sta sprites.colors + i + 4
+  ldx #BORDER_LEFT + 2 + 32
+  stx sprites.positions
+  stx sprites.positions + 8
+  ldy #BORDER_TOP + 2 + 32
+  sty sprites.positions + 1
+  ldy #BORDER_TOP + DOUBLE_SPRITE_HEIGHT + 4
+  sty sprites.positions + 9
+  lda #1
+  sta sprites.colors
+  sta sprites.colors + 4
 
-    lda #250 + i
-    sta sprites.pointers + i
+  lda #address_sprites_pointer
+  sta sprites.pointers
 
-    lda 250*64 + 64*[i+1] - 1
-    and #%10000000
-    beq !hires+
-    !multicolor:
-    lda #1 << i
-    ora sprites.multicolor_bits
-    sta sprites.multicolor_bits
-    jmp !end+
-    !hires:
-    lda #255 - [1 << i]
-    and sprites.multicolor_bits
-    sta sprites.multicolor_bits
-    !end:
-    lda 250*64 + 64*[i+1] - 1
-    and #%00001111
-    sta sprites.colors + i
-  }
+  lda #address_sprites + 64 - 1
+  and #%10000000
+  beq !hires+
+  !multicolor:
+  lda #1 << 0
+  ora sprites.multicolor_bits
+  sta sprites.multicolor_bits
+  jmp !end+
+  !hires:
+  lda #255 - [1 << 0]
+  and sprites.multicolor_bits
+  sta sprites.multicolor_bits
+  !end:
+  lda #address_sprites + 64 - 1
+  and #%00001111
+  sta sprites.colors
   rts
 
 draw_player_sprite:
