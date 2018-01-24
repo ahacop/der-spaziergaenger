@@ -43,6 +43,3 @@ setup_player_sprite:
   and #%00001111
   sta sprites.colors
   rts
-
-draw_player_sprite:
-  rts
