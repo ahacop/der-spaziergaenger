@@ -1,8 +1,7 @@
 #import "src/config_resources.asm"
-
-:BasicUpstart2(main)
 #import "src/config_symbols.asm"
 
+:BasicUpstart2(main)
 
 main:
   clear_screen(screen_ram, ' ')
