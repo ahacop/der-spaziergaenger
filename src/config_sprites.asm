@@ -1,6 +1,6 @@
-.const BORDER_LEFT = 22
-.const BORDER_TOP = 42
-.const address_sprites_pointer = address_sprites / $40
+.label BORDER_LEFT = 22
+.label BORDER_TOP = 42
+.label address_sprites_pointer = address_sprites / $40
 
 .namespace sprites {
   .label positions = VIC2
