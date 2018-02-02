@@ -3,6 +3,11 @@
 .label screen_ram = $0400     // location of screen ram
 .label border_color = $d020
 .label background_color = $d021
+.label background_color0 = $d021
+.label background_color1 = $d022
+.label background_color2 = $d023
+.label background_color3 = $d024
+
 .label init_sid = $11ed     // init routine for music
 .label play_sid = $1004     // play music routine
 .label delay_counter = $90       // used to time color switch in the border

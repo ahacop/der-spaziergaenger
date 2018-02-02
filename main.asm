@@ -4,11 +4,12 @@
 :BasicUpstart2(main)
 
 main:
+  lib_screen_set_colors(BLACK, DARK_GRAY, BLACK, BLACK, BLACK)
   lda #LIGHT_RED
   sta sprites.color1
   lda #BROWN
   sta sprites.color2
-  clear_screen(screen_ram, DARK_GRAY, ' ')
+  lib_screen_clear_screen(screen_ram, ' ')
   jsr setup_player_sprite
 
   sei
@@ -30,9 +31,6 @@ main:
   lda #$00    // trigger interrupt at row zero
   sta $d012
 
-  lda #$06    // set border to blue color
-  sta $d020
-
   cli
   jmp *
   rts
@@ -47,7 +45,7 @@ irq:
 
   jmp $ea31
 
+#import "src/lib_screen.asm"
 #import "src/check_keyboard.asm"
-#import "src/clear_screen.asm"
 #import "src/config_sprites.asm"
 /*#import "src/update_player.asm"*/
