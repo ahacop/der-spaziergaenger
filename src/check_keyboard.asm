@@ -45,6 +45,7 @@ go_up:
   cmp #BORDER_TOP
   beq skip
   dec sprites.positions + 1
+  dec sprites.positions + 3
   rts
 
 go_down:
@@ -52,24 +53,26 @@ go_down:
   cmp #$e5
   beq skip
   inc sprites.positions + 1
+  inc sprites.positions + 3
   rts
 
 go_right:
-  lda #address_sprites_pointer + 1
-  sta sprites.pointers
+  /*lda #address_sprites_pointer + 1*/
+  /*sta sprites.pointers*/
   ldx sprites.positions
   inx
   bne not_boundary
 toggle_high_bit:
   lda sprites.position_x_high_bits
-  eor #$01
+  eor #%00000101
   sta sprites.position_x_high_bits
 not_boundary:
   stx sprites.positions
+  stx sprites.positions + 2
   rts
 go_left:
-  lda #address_sprites_pointer
-  sta sprites.pointers
+  /*lda #address_sprites_pointer*/
+  /*sta sprites.pointers*/
   ldx sprites.positions
   dex
   cpx #$ff

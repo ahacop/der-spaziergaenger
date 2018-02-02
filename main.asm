@@ -4,7 +4,11 @@
 :BasicUpstart2(main)
 
 main:
-  clear_screen(screen_ram, ' ')
+  lda #LIGHT_RED
+  sta sprites.color1
+  lda #BROWN
+  sta sprites.color2
+  clear_screen(screen_ram, DARK_GRAY, ' ')
   jsr setup_player_sprite
 
   sei
@@ -39,11 +43,11 @@ irq:
   /*jsr play_sid       // jump to play music routine*/
   /*jsr update_ship    // move ship*/
   jsr check_keyboard // check keyboard controls
+  jsr draw_animations
 
   jmp $ea31
 
-#import "src/config_sprites.asm"
-#import "src/clear_screen.asm"
 #import "src/check_keyboard.asm"
+#import "src/clear_screen.asm"
+#import "src/config_sprites.asm"
 /*#import "src/update_player.asm"*/
-

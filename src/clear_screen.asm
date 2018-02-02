@@ -1,8 +1,8 @@
 // clear screen and turn black
-.macro clear_screen(screen, clearByte) {
-  ldx #BLACK
-  stx $d020
-  stx $d021
+.macro clear_screen(screen, color, clearByte) {
+  lda #color
+  sta background_color
+  sta border_color
 	lda #clearByte
 	ldx #0
 !loop:
