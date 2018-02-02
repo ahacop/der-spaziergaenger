@@ -22,3 +22,62 @@
 	inx
 	bne !loop-
 }
+
+// macro: lib_screen_draw_decimal
+//   xpos = X Position 0-39 (Address)
+//   ypos = Y Position 0-24 (Address)
+//   decimal = decimal number 2 nybbles (Address)
+//   color = Text Color (Value)
+.macro lib_screen_draw_decimal(xpos, ypos, decimal, color) {
+  ldy ypos // load y position as index into list
+  lda ScreenRAMRowStartLow, y // load low address byte
+  sta ZeroPageLow
+  lda ScreenRAMRowStartHigh, y // load high address byte
+  sta ZeroPageHigh
+
+  ldy xpos // load x position into Y register
+
+  // get high nybble
+  lda decimal
+  and #$F0
+
+  // convert to ascii
+  lsr
+  lsr
+  lsr
+  lsr
+  ora #$30
+
+  sta (ZeroPageLow), y
+
+  // move along to next screen position
+  iny
+
+  // get low nybble
+  lda decimal
+  and #$0F
+
+  // convert to ascii
+  ora #$30
+
+  sta (ZeroPageLow), y
+
+  // now set the colors
+  ldy ypos // load y position as index into list
+
+  lda ColorRAMRowStartLow, y // load low address byte
+  sta ZeroPageLow
+
+  lda ColorRAMRowStartHigh, y // load high address byte
+  sta ZeroPageHigh
+
+  ldy xpos // load x position into Y register
+
+  lda #color
+  sta (ZeroPageLow), y
+
+  // move along to next screen position
+  iny
+
+  sta (ZeroPageLow), y
+}
