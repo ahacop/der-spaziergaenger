@@ -93,8 +93,6 @@
   .label horizontal_stretch_bits = VIC2 + 29
   .label pointers = screen_ram + $03f8
   .label multicolor_bits = VIC2 + 28
-  .label color1 = VIC2 + 37
-  .label color2 = VIC2 + 38
 }
 
 draw_animations:
