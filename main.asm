@@ -10,6 +10,7 @@ main:
   lda #BROWN
   sta sprites.color2
   lib_screen_clear_screen(screen_ram, ' ')
+  lib_screen_draw_text(title.position.x, title.position.y, title.text, WHITE)
   jsr setup_player_sprite
 
   sei
@@ -47,5 +48,6 @@ irq:
 
 #import "src/lib_screen.asm"
 #import "src/check_keyboard.asm"
+#import "src/game_data.asm"
 #import "src/config_sprites.asm"
 /*#import "src/update_player.asm"*/

@@ -23,6 +23,53 @@
 	bne !loop-
 }
 
+// macro: lib_screen_draw_text
+//   xpos = X Position 0-39 (Address)
+//   ypos = Y Position 0-24 (Address)
+//   string = 0 terminated string (Address)
+//   color = Text Color (Value)
+.macro lib_screen_draw_text(xpos, ypos, string, color) {
+  ldy ypos // load y position as index into list
+
+  lda ScreenRAMRowStartLow, y // load low address byte
+  sta ZeroPageLow
+
+  lda ScreenRAMRowStartHigh, y // load high address byte
+  sta ZeroPageHigh
+
+  ldy xpos // load x position into Y register
+
+  ldx #0
+!loop:   lda string, x
+  cmp #0
+  beq !done+
+  sta (ZeroPageLow), y
+  inx
+  iny
+  jmp !loop-
+!done:
+  ldy ypos // load y position as index into list
+
+  lda ColorRAMRowStartLow, y // load low address byte
+  sta ZeroPageLow
+
+  lda ColorRAMRowStartHigh, y // load high address byte
+  sta ZeroPageHigh
+
+  ldy xpos // load x position into Y register
+
+  ldx #0
+!loop:  lda string, x
+  cmp #0
+  beq !done+
+  lda #color
+  sta (ZeroPageLow), y
+  inx
+  iny
+  jmp !loop-
+!done:
+}
+
 // macro: lib_screen_draw_decimal
 //   xpos = X Position 0-39 (Address)
 //   ypos = Y Position 0-24 (Address)
