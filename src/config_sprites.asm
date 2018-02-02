@@ -164,6 +164,30 @@ sprite_bitmaps:
   }
 
 .macro advance_optimized_frame(animation_id, animation, current_frame, frame_counts) {
+  lib_math_add_8bit(sprite_info.position.start_x, 0, sprite_info.position.x)
+  lib_screen_draw_decimal(
+    sprite_info.position.x,
+    sprite_info.position.y,
+    current_frame.counter,
+    WHITE
+  )
+
+  lib_math_add_8bit(sprite_info.position.start_x, 3, sprite_info.position.x)
+  lib_screen_draw_decimal(
+    sprite_info.position.x,
+    sprite_info.position.y,
+    animation.frames_end,
+    WHITE
+  )
+
+  lib_math_add_8bit(sprite_info.position.start_x, 6, sprite_info.position.x)
+  lib_screen_draw_decimal(
+    sprite_info.position.x,
+    sprite_info.position.y,
+    current_frame.index,
+    WHITE
+  )
+
   ldy current_frame.counter
   dey
   beq actually_advance_frame

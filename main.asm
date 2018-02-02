@@ -43,6 +43,7 @@ irq:
 
   jmp $ea31
 
+#import "src/lib_math.asm"
 #import "src/lib_screen.asm"
 #import "src/lib_sprite.asm"
 #import "src/check_keyboard.asm"
