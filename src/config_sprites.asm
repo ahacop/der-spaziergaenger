@@ -140,10 +140,6 @@ setup_player_sprite:
   }
   rts
 
-convtable:
-  .byte $30,$31,$32,$33,$34,$35,$36,$37
-  .byte $38,$39,$01,$02,$03,$04,$05,$06
-
 .pc = * "Data"
 .namespace walker_current_frame {
   counter: .byte 1
@@ -193,38 +189,4 @@ update:
   stx sprites.pointers + animation.sprite_id
   jmp end
 end:
-}
-
-.macro print_byte(byte, posx) {
-  lda byte
-  pha
-  lsr
-  lsr
-  lsr
-  lsr
-  tax
-  lda convtable, x
-  sta $0400+posx
-  pla
-  and #$0f
-  tax
-  lda convtable, x
-  sta $0401 + posx
-}
-
-.macro print_x(posx) {
-  txa
-  pha
-  lsr
-  lsr
-  lsr
-  lsr
-  tax
-  lda convtable, x
-  sta $0400+posx
-  pla
-  and #$0f
-  tax
-  lda convtable, x
-  sta $0401 + posx
 }
