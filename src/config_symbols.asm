@@ -8,6 +8,8 @@
 .label background_color1 = $d022
 .label background_color2 = $d023
 .label background_color3 = $d024
+.label sprite_multicolor0 = $d025
+.label sprite_multicolor1 = $d026
 
 .label init_sid = $11ed     // init routine for music
 .label play_sid = $1004     // play music routine

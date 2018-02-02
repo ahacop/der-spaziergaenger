@@ -5,10 +5,7 @@
 
 main:
   lib_screen_set_colors(BLACK, DARK_GRAY, BLACK, BLACK, BLACK)
-  lda #LIGHT_RED
-  sta sprites.color1
-  lda #BROWN
-  sta sprites.color2
+  lib_sprite_set_multicolors(LIGHT_RED, BROWN)
   lib_screen_clear_screen(screen_ram, ' ')
   lib_screen_draw_text(title.position.x, title.position.y, title.text, WHITE)
   jsr setup_player_sprite
@@ -47,6 +44,7 @@ irq:
   jmp $ea31
 
 #import "src/lib_screen.asm"
+#import "src/lib_sprite.asm"
 #import "src/check_keyboard.asm"
 #import "src/game_data.asm"
 #import "src/config_sprites.asm"
