@@ -3,7 +3,6 @@
 .label screen_ram = $0400     // location of screen ram
 .label color_ram = $d800
 .label border_color = $d020
-.label background_color = $d021
 .label background_color0 = $d021
 .label background_color1 = $d022
 .label background_color2 = $d023
