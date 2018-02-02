@@ -1,5 +1,5 @@
 .label VIC2 = $d000
-.label address_sprites = 250*64
+.label address_sprites = $3000
 .label screen_ram = $0400     // location of screen ram
 .label color_ram = $d800
 .label border_color = $d020
