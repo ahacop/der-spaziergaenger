@@ -49,7 +49,7 @@
 }
 
 .const FILENAMES = List().add(
-    "resources/walker_up.bin"
+    "resources/walker_up_low.bin"
 ).lock()
 
 .const SPRITEPAD_FILES = List()
@@ -214,7 +214,7 @@ end:
 }
 
 walker_frame_counts:
-  .byte 5, 7, 8, 9
+  .byte 5, 5, 5, 5, 5, 5
 
 current_frames:
   .for (var i = 0; i < ANIMATIONS.size(); i++) {
