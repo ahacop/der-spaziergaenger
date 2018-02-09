@@ -210,7 +210,6 @@ end:
 .namespace walker_current_frame {
   counter: .byte 5
   index: .byte 0
-  ping_pong: .byte 0
 }
 
 walker_frame_counts:
