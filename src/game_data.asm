@@ -7,6 +7,7 @@
 }
 
 .namespace sprite_info {
+  current_frame_total_count: .byte 0
   .namespace position {
     start_x: .byte 0
     x: .byte 0

@@ -95,13 +95,6 @@
   .label multicolor_bits = VIC2 + 28
 }
 
-draw_animations:
-  .for (var i = 0; i < ANIMATIONS.size(); i++) {
-    .var animation = ANIMATIONS.get(i)
-    advance_optimized_frame(i, animation, walker_current_frame, walker_frame_counts)
-  }
-  rts
-
 setup_player_sprite:
   .const OFFSET = 50
   // Don't use ANIMATIONS.size() since some of them can be overlayed
@@ -138,49 +131,14 @@ setup_player_sprite:
   }
   rts
 
+draw_animations:
+  .var animation = ANIMATIONS.get(0)
+  advance_optimized_frame(0, animation, walker_current_frame, walker_frame_counts)
+  rts
+
 .pc = * "Data"
-.namespace walker_current_frame {
-  counter: .byte 1
-  index: .byte 0
-  ping_pong: .byte 0
-}
-
-walker_frame_counts:
-  .byte 5, 5, 5, 5, 5, 5, 5, 5
-
-current_frames:
-  .for (var i = 0; i < ANIMATIONS.size(); i++) {
-    .var animation = ANIMATIONS.get(i)
-    .byte animation.first_frame_index
-  }
-
-sprite_bitmaps:
-  .for (var a = 0; a < ANIMATIONS.size(); a++) {
-    .var animation = ANIMATIONS.get(a)
-    .pc = animation.first_frame_index*64
-    .for (var j = 0; j < animation.frames.size(); j++) {
-      .fill 64, animation.frames.get(j).raw_bytes.get(i)
-    }
-  }
-
 .macro advance_optimized_frame(animation_id, animation, current_frame, frame_counts) {
   lib_math_add_8bit(sprite_info.position.start_x, 0, sprite_info.position.x)
-  lib_screen_draw_decimal(
-    sprite_info.position.x,
-    sprite_info.position.y,
-    current_frame.counter,
-    WHITE
-  )
-
-  lib_math_add_8bit(sprite_info.position.start_x, 3, sprite_info.position.x)
-  lib_screen_draw_decimal(
-    sprite_info.position.x,
-    sprite_info.position.y,
-    animation.frames_end,
-    WHITE
-  )
-
-  lib_math_add_8bit(sprite_info.position.start_x, 6, sprite_info.position.x)
   lib_screen_draw_decimal(
     sprite_info.position.x,
     sprite_info.position.y,
@@ -188,6 +146,43 @@ sprite_bitmaps:
     WHITE
   )
 
+  lib_math_add_8bit(sprite_info.position.start_x, 3, sprite_info.position.x)
+  lib_screen_draw_decimal(
+    sprite_info.position.x,
+    sprite_info.position.y,
+    current_frame.counter,
+    WHITE
+  )
+
+  lib_math_add_8bit(sprite_info.position.start_x, 6, sprite_info.position.x)
+  lib_screen_draw_decimal(
+    sprite_info.position.x,
+    sprite_info.position.y,
+    animation.frames_end,
+    WHITE
+  )
+
+  lib_math_add_8bit(sprite_info.position.start_x, 12, sprite_info.position.x)
+  lib_screen_draw_decimal(
+    sprite_info.position.x,
+    sprite_info.position.y,
+    animation.first_frame_index,
+    WHITE
+  )
+
+  ldy current_frame.index
+  lda frame_counts, y
+  sta sprite_info.current_frame_total_count
+  lib_math_add_8bit(sprite_info.position.start_x, 9, sprite_info.position.x)
+  lib_screen_draw_decimal(
+    sprite_info.position.x,
+    sprite_info.position.y,
+    sprite_info.current_frame_total_count,
+    WHITE
+  )
+
+  /*advance_optimized_frame(0, animation, walker_current_frame, walker_frame_counts)*/
+/*.macro advance_optimized_frame(animation_id, animation, current_frame, frame_counts) {*/
   ldy current_frame.counter
   dey
   beq actually_advance_frame
@@ -212,3 +207,27 @@ update:
   jmp end
 end:
 }
+.namespace walker_current_frame {
+  counter: .byte 5
+  index: .byte 0
+  ping_pong: .byte 0
+}
+
+walker_frame_counts:
+  .byte 5, 7, 8, 9
+
+current_frames:
+  .for (var i = 0; i < ANIMATIONS.size(); i++) {
+    .var animation = ANIMATIONS.get(i)
+    .byte animation.first_frame_index
+  }
+
+sprite_bitmaps:
+  .for (var a = 0; a < ANIMATIONS.size(); a++) {
+    .var animation = ANIMATIONS.get(a)
+    .pc = animation.first_frame_index*64
+    .for (var j = 0; j < animation.frames.size(); j++) {
+      .fill 64, animation.frames.get(j).raw_bytes.get(i)
+    }
+  }
+
