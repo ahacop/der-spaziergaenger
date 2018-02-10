@@ -1,14 +1,13 @@
-#import "src/config_resources.asm"
 #import "src/config_symbols.asm"
 
 :BasicUpstart2(main)
 
 main:
-  lib_screen_set_colors(BLACK, DARK_GRAY, BLACK, BLACK, BLACK)
+  lib_screen_set_colors(BLACK, GREY, BLACK, BLACK, BLACK)
   lib_sprite_set_multicolors(LIGHT_RED, BROWN)
   lib_screen_clear_screen(screen_ram, ' ')
   lib_screen_draw_text(title.position.x, title.position.y, title.text, WHITE)
-  jsr setup_player_sprite
+  jsr player_init
 
   sei
 
@@ -39,7 +38,8 @@ irq:
   /*jsr play_sid       // jump to play music routine*/
   /*jsr update_ship    // move ship*/
   jsr check_keyboard // check keyboard controls
-  jsr draw_animations
+  jsr lib_sprites_update
+  jsr player_update
 
   jmp $ea31
 
@@ -50,3 +50,5 @@ irq:
 #import "src/game_data.asm"
 #import "src/config_sprites.asm"
 /*#import "src/update_player.asm"*/
+
+#import "src/config_resources.asm"

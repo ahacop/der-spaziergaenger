@@ -1,232 +1,389 @@
-.label BORDER_LEFT = 22
-.label BORDER_TOP = 42
-.label address_sprites_pointer = address_sprites / $40
-.const CENTER_X = 184
-.const CENTER_Y = 150
-.const SPRITE_WIDTH = 24
-.const SPRITE_HEIGHT = 21
+.namespace player {
+  .label up_animation = 0
+  .label left_animation = 6
+  .label right_animation = 12
+  .label frame = 0
+  .label horizontal_speed = 2
+  .label state_run_up = 0
+  .label state_run_left = 1
+  .label state_run_right = 2
+  .label animation_delay = 6
+  state: .byte state_run_up
+  sprite: .byte 0
+  x_high: .byte 0
+  x_low: .byte 175
+  ypos: .byte 229
+  xvelocity: .byte 0
+  xvelocity_abs: .byte 0
+  .label xminhigh = 0 // 0*256 + 20 = 20 minX
+  .label xminlow = 20
+  .label xmaxhigh = 1 // 1*256 + 68 = 324 maxX
+  .label xmaxlow = 68
 
-.struct SpritepadFile {
-  sprites
+  jump_table_low:
+    .byte <player_update_run_up
+    .byte <player_update_run_left
+    .byte <player_update_run_right
+  jump_table_high:
+    .byte >player_update_run_up
+    .byte >player_update_run_left
+    .byte >player_update_run_right
 }
 
-.struct Sprite {
-  raw_bytes,
-  multicolor_mode,
-  overlay,
-  color
-}
-
-.function parse_sprite(file, sprite_index) {
-  .var raw_bytes = List()
-  .for (var i = 0; i < 64; i++) {
-    .eval raw_bytes.add(file.get(64*sprite_index + i))
-  }
-  .var attributes = raw_bytes.get(raw_bytes.size() - 1)
-  .var multicolor_mode = [attributes & %10000000] == %10000000
-  .var overlay = [attributes & %00010000] == %00010000
-  .var color = attributes & %00001111
-  .return Sprite(raw_bytes, multicolor_mode, overlay, color)
-}
-
-.function parse_spritepad_file(file) {
-  .var result = SpritepadFile(List())
-  .for (var i = 0; i < file.getSize() / 64; i++) {
-    .eval result.sprites.add(parse_sprite(file, i))
-  }
-  .return result
-}
-
-.struct Animation {
-  frames,
-  first_frame_index,
-  frames_end,
-  sprite_id
-}
-
-.function init_animation(frames, first_frame_index, sprite_id) {
-  .return Animation(frames, first_frame_index, first_frame_index + frames.size(), sprite_id)
-}
-
-.const FILENAMES = List().add(
-    "resources/walker_up_low.bin"
-).lock()
-
-.const SPRITEPAD_FILES = List()
-.for (var i = 0; i < FILENAMES.size(); i++) {
-  .eval SPRITEPAD_FILES.add(parse_spritepad_file(LoadBinary(FILENAMES.get(i))))
-}
-.eval SPRITEPAD_FILES.lock()
-
-.const ANIMATIONS = List()
-.var next_frames_end = 256
-.var next_sprite = 0
-.for (var i = 0; i < SPRITEPAD_FILES.size(); i++) {
-  .var file = SPRITEPAD_FILES.get(i)
-  .var frame_sets = List()
-  .if (file.sprites.get(0).overlay) {
-    .eval frame_sets.add(List(), List())
-    .for (var s = 0; s < file.sprites.size()/2; s++) {
-      .eval frame_sets.get(0).add(file.sprites.get(2*s+1))
-      .eval frame_sets.get(1).add(file.sprites.get(2*s+0))
-    }
-  } else {
-    .eval frame_sets.add(file.sprites)
-  }
-  .for (var j = 0; j < frame_sets.size(); j++) {
-    .var frames = frame_sets.get(j)
-    .var animation = init_animation(frames, next_frames_end - frames.size(), next_sprite)
-    .eval next_frames_end = animation.first_frame_index
-    .eval next_sprite++
-    .eval animation.lock()
-    .eval ANIMATIONS.add(animation)
-  }
-}
-.eval ANIMATIONS.lock()
-
-.namespace sprites {
-  .label positions = VIC2
-  .label position_x_high_bits = VIC2 + 16
-  .label enable_bits = VIC2 + 21
-  .label colors = VIC2 + 39
-  .label vertical_stretch_bits = VIC2 + 23
-  .label horizontal_stretch_bits = VIC2 + 29
-  .label pointers = screen_ram + $03f8
-  .label multicolor_bits = VIC2 + 28
-}
-
-setup_player_sprite:
-  .const OFFSET = 50
-  // Don't use ANIMATIONS.size() since some of them can be overlayed
-  .var next_x = CENTER_X - SPRITEPAD_FILES.size()*OFFSET/2
-  .var next_y = CENTER_Y - SPRITEPAD_FILES.size()*OFFSET/2
-  .for (var i = 0; i < ANIMATIONS.size(); i++) {
-    .var animation = ANIMATIONS.get(i)
-    .var sprite_bit = [%00000001 << animation.sprite_id]
-    .var first_frame = animation.frames.get(0)
-    lda #sprite_bit
-    ora sprites.enable_bits
-    sta sprites.enable_bits
-    .if (first_frame.multicolor_mode) {
-      lda #sprite_bit
-      ora sprites.multicolor_bits
-      sta sprites.multicolor_bits
-    }
-    lda #first_frame.color
-    sta sprites.colors + i
-
-    lda current_frames + i
-    sta sprites.pointers + i
-
-    .if (first_frame.overlay) {
-      .eval next_x -= OFFSET
-      .eval next_y -= OFFSET
-    }
-    ldx #next_x
-    stx sprites.positions + 2*i
-    ldy #next_y
-    sty sprites.positions + 2*i + 1
-    .eval next_x += OFFSET
-    .eval next_y += OFFSET
-  }
+player_init:
+  lib_sprite_enable(player.sprite, 1)
+  lib_sprite_set_frame(player.sprite, player.up_animation)
+  lib_sprite_set_color(player.sprite, ORANGE)
+  lib_sprite_multicolor_enable(player.sprite, 1)
+  jsr player_set_run_up
   rts
 
-draw_animations:
-  .var animation = ANIMATIONS.get(0)
-  advance_optimized_frame(0, animation, walker_current_frame, walker_frame_counts)
+player_update:
+  jsr player_update_state
+  jsr player_update_velocity
+  jsr player_update_position
   rts
 
-.pc = * "Data"
-.macro advance_optimized_frame(animation_id, animation, current_frame, frame_counts) {
-  lib_math_add_8bit(sprite_info.position.start_x, 0, sprite_info.position.x)
-  lib_screen_draw_decimal(
-    sprite_info.position.x,
-    sprite_info.position.y,
-    current_frame.index,
-    WHITE
-  )
+player_update_state:
+  // now run the state machine
+  ldy player.state
 
-  lib_math_add_8bit(sprite_info.position.start_x, 3, sprite_info.position.x)
-  lib_screen_draw_decimal(
-    sprite_info.position.x,
-    sprite_info.position.y,
-    current_frame.counter,
-    WHITE
-  )
+  // write the state's routine address to a zeropage temporary
+  lda player.jump_table_low, y
+  sta ZeroPageLow
+  lda player.jump_table_high, y
+  sta ZeroPageHigh
 
-  lib_math_add_8bit(sprite_info.position.start_x, 6, sprite_info.position.x)
-  lib_screen_draw_decimal(
-    sprite_info.position.x,
-    sprite_info.position.y,
-    animation.frames_end,
-    WHITE
-  )
+  // jump to the update routine that temp_address now points to
+  jmp (ZeroPageLow)
 
-  lib_math_add_8bit(sprite_info.position.start_x, 12, sprite_info.position.x)
-  lib_screen_draw_decimal(
-    sprite_info.position.x,
-    sprite_info.position.y,
-    animation.first_frame_index,
-    WHITE
-  )
+player_update_run_up:
+  lda player.xvelocity
+  beq !done+
+  bpl !positive+
+!negative:
+  jsr player_set_run_left
+  jmp !done+
+!positive:
+  jsr player_set_run_right
+!done:
+  rts
 
-  ldy current_frame.index
-  lda frame_counts, y
-  sta sprite_info.current_frame_total_count
-  lib_math_add_8bit(sprite_info.position.start_x, 9, sprite_info.position.x)
-  lib_screen_draw_decimal(
-    sprite_info.position.x,
-    sprite_info.position.y,
-    sprite_info.current_frame_total_count,
-    WHITE
-  )
+player_update_run_left:
+  lda player.xvelocity
+  beq !zero+
+  bpl !positive+
+!negative:
+  jmp !done+
+!positive:
+  jsr player_set_run_right
+  jmp !done+
+!zero:
+  jsr player_set_run_up
+!done:
+  rts
 
+player_update_run_right:
+  lda player.xvelocity
+  beq !zero+
+  bpl !positive+
+!negative:
+  jsr player_set_run_left
+  jmp !done+
+!zero:
+  jsr player_set_run_up
+!positive:
+!done:
+  rts
+
+player_set_run_left:
+  lda #player.state_run_left
+  sta player.state
+  lib_sprite_play_animation(player.sprite, 6, 11, player.animation_delay, 1)
+  rts
+
+player_set_run_right:
+  lda #player.state_run_right
+  sta player.state
+  lib_sprite_play_animation(player.sprite, 12, 17, player.animation_delay, 1)
+  rts
+
+player_set_run_up:
+  lda #player.state_run_up
+  sta player.state
+  lib_sprite_play_animation(player.sprite, 0, 5, player.animation_delay, 1)
+  rts
+
+player_update_position:
+  lda player.xvelocity
+  beq !done+ // if zero velocity
+  bpl !positive+
+!negative:
+  // subtract the x velocity abs from the x position
+  libmath_sub16bit_aavaaa(
+    player.x_high,
+    player.x_low,
+    0,
+    player.xvelocity_abs,
+    player.x_high,
+    player.x_low
+  )
+  jmp !done+
+!positive:
+  // add the x velocity abs to the x position
+  libmath_add16bit_aavaaa(
+    player.x_high,
+    player.x_low,
+    0,
+    player.xvelocity_abs,
+    player.x_high,
+    player.x_low
+  )
+!done:
+  libmath_min16bit_aavv(player.x_high, player.x_low, player.xmaxhigh, player.xmaxlow)
+  libmath_max16bit_aavv(player.x_high, player.x_low, player.xminhigh, player.xminlow)
+  lib_sprite_set_position_aaaa(
+    player.sprite,
+    player.x_high,
+    player.x_low,
+    player.ypos
+  )
+  rts
+
+player_update_velocity:
+  libmath_abs_aa(player.xvelocity, player.xvelocity_abs)
+  rts
+
+/*.label BORDER_LEFT = 22*/
+/*.label BORDER_TOP = 42*/
+/*.label address_sprites_pointer = address_sprites / $40*/
+/*.const CENTER_X = 184*/
+/*.const CENTER_Y = 150*/
+/*.const SPRITE_WIDTH = 24*/
+/*.const SPRITE_HEIGHT = 21*/
+
+/*.struct SpritepadFile {*/
+  /*sprites*/
+/*}*/
+
+/*.struct Sprite {*/
+  /*raw_bytes,*/
+  /*multicolor_mode,*/
+  /*overlay,*/
+  /*color*/
+/*}*/
+
+/*.function parse_sprite(file, sprite_index) {*/
+  /*.var raw_bytes = List()*/
+  /*.for (var i = 0; i < 64; i++) {*/
+    /*.eval raw_bytes.add(file.get(64*sprite_index + i))*/
+  /*}*/
+  /*.var attributes = raw_bytes.get(raw_bytes.size() - 1)*/
+  /*.var multicolor_mode = [attributes & %10000000] == %10000000*/
+  /*.var overlay = [attributes & %00010000] == %00010000*/
+  /*.var color = attributes & %00001111*/
+  /*.return Sprite(raw_bytes, multicolor_mode, overlay, color)*/
+/*}*/
+
+/*.function parse_spritepad_file(file) {*/
+  /*.var result = SpritepadFile(List())*/
+  /*.for (var i = 0; i < file.getSize() / 64; i++) {*/
+    /*.eval result.sprites.add(parse_sprite(file, i))*/
+  /*}*/
+  /*.return result*/
+/*}*/
+
+/*.struct Animation {*/
+  /*frames,*/
+  /*first_frame_index,*/
+  /*frames_end,*/
+  /*sprite_id*/
+/*}*/
+
+/*.function init_animation(frames, first_frame_index, sprite_id) {*/
+  /*.return Animation(frames, first_frame_index, first_frame_index + frames.size(), sprite_id)*/
+/*}*/
+
+/*.const FILENAMES = List().add(*/
+    /*"resources/walker_up_low.bin"*/
+/*).lock()*/
+
+/*.const SPRITEPAD_FILES = List()*/
+/*.for (var i = 0; i < FILENAMES.size(); i++) {*/
+  /*.eval SPRITEPAD_FILES.add(parse_spritepad_file(LoadBinary(FILENAMES.get(i))))*/
+/*}*/
+/*.eval SPRITEPAD_FILES.lock()*/
+
+/*.const ANIMATIONS = List()*/
+/*.var next_frames_end = 256*/
+/*.var next_sprite = 0*/
+/*.for (var i = 0; i < SPRITEPAD_FILES.size(); i++) {*/
+  /*.var file = SPRITEPAD_FILES.get(i)*/
+  /*.var frame_sets = List()*/
+  /*.if (file.sprites.get(0).overlay) {*/
+    /*.eval frame_sets.add(List(), List())*/
+    /*.for (var s = 0; s < file.sprites.size()/2; s++) {*/
+      /*.eval frame_sets.get(0).add(file.sprites.get(2*s+1))*/
+      /*.eval frame_sets.get(1).add(file.sprites.get(2*s+0))*/
+    /*}*/
+  /*} else {*/
+    /*.eval frame_sets.add(file.sprites)*/
+  /*}*/
+  /*.for (var j = 0; j < frame_sets.size(); j++) {*/
+    /*.var frames = frame_sets.get(j)*/
+    /*.var animation = init_animation(frames, next_frames_end - frames.size(), next_sprite)*/
+    /*.eval next_frames_end = animation.first_frame_index*/
+    /*.eval next_sprite++*/
+    /*.eval animation.lock()*/
+    /*.eval ANIMATIONS.add(animation)*/
+  /*}*/
+/*}*/
+/*.eval ANIMATIONS.lock()*/
+
+/*.namespace sprites {*/
+  /*.label positions = VIC2*/
+  /*.label position_x_high_bits = VIC2 + 16*/
+  /*.label enable_bits = VIC2 + 21*/
+  /*.label colors = VIC2 + 39*/
+  /*.label vertical_stretch_bits = VIC2 + 23*/
+  /*.label horizontal_stretch_bits = VIC2 + 29*/
+  /*.label pointers = screen_ram + $03f8*/
+  /*.label multicolor_bits = VIC2 + 28*/
+/*}*/
+
+/*setup_player_sprite:*/
+  /*.const OFFSET = 50*/
+  /*// Don't use ANIMATIONS.size() since some of them can be overlayed*/
+  /*.var next_x = CENTER_X - SPRITEPAD_FILES.size()*OFFSET/2*/
+  /*.var next_y = CENTER_Y - SPRITEPAD_FILES.size()*OFFSET/2*/
+  /*.for (var i = 0; i < ANIMATIONS.size(); i++) {*/
+    /*.var animation = ANIMATIONS.get(i)*/
+    /*.var sprite_bit = [%00000001 << animation.sprite_id]*/
+    /*.var first_frame = animation.frames.get(0)*/
+    /*lda #sprite_bit*/
+    /*ora sprites.enable_bits*/
+    /*sta sprites.enable_bits*/
+    /*.if (first_frame.multicolor_mode) {*/
+      /*lda #sprite_bit*/
+      /*ora sprites.multicolor_bits*/
+      /*sta sprites.multicolor_bits*/
+    /*}*/
+    /*lda #first_frame.color*/
+    /*sta sprites.colors + i*/
+
+    /*lda current_frames + i*/
+    /*sta sprites.pointers + i*/
+
+    /*.if (first_frame.overlay) {*/
+      /*.eval next_x -= OFFSET*/
+      /*.eval next_y -= OFFSET*/
+    /*}*/
+    /*ldx #next_x*/
+    /*stx sprites.positions + 2*i*/
+    /*ldy #next_y*/
+    /*sty sprites.positions + 2*i + 1*/
+    /*.eval next_x += OFFSET*/
+    /*.eval next_y += OFFSET*/
+  /*}*/
+  /*rts*/
+
+/*draw_animations:*/
+  /*.var animation = ANIMATIONS.get(0)*/
   /*advance_optimized_frame(0, animation, walker_current_frame, walker_frame_counts)*/
+  /*rts*/
+
+/*.pc = * "Data"*/
 /*.macro advance_optimized_frame(animation_id, animation, current_frame, frame_counts) {*/
-  ldy current_frame.counter
-  dey
-  beq actually_advance_frame
-  sty current_frame.counter
-  jmp end
-actually_advance_frame:
-  ldx current_frames + animation_id
-  inx
-  ldy current_frame.index
-  iny
-  cpx #animation.frames_end
-  bne update
-wrap_around:
-  ldx #animation.first_frame_index
-  ldy #0
-update:
-  sty current_frame.index
-  lda frame_counts, y
-  sta current_frame.counter
-  stx current_frames + animation_id
-  stx sprites.pointers + animation.sprite_id
-  jmp end
-end:
-}
-.namespace walker_current_frame {
-  counter: .byte 5
-  index: .byte 0
-}
+  /*lib_math_add_8bit(sprite_info.position.start_x, 0, sprite_info.position.x)*/
+  /*lib_screen_draw_decimal(*/
+    /*sprite_info.position.x,*/
+    /*sprite_info.position.y,*/
+    /*current_frame.index,*/
+    /*WHITE*/
+  /*)*/
 
-walker_frame_counts:
-  .byte 5, 5, 5, 5, 5, 5
+  /*lib_math_add_8bit(sprite_info.position.start_x, 3, sprite_info.position.x)*/
+  /*lib_screen_draw_decimal(*/
+    /*sprite_info.position.x,*/
+    /*sprite_info.position.y,*/
+    /*current_frame.counter,*/
+    /*WHITE*/
+  /*)*/
 
-current_frames:
-  .for (var i = 0; i < ANIMATIONS.size(); i++) {
-    .var animation = ANIMATIONS.get(i)
-    .byte animation.first_frame_index
-  }
+  /*lib_math_add_8bit(sprite_info.position.start_x, 6, sprite_info.position.x)*/
+  /*lib_screen_draw_decimal(*/
+    /*sprite_info.position.x,*/
+    /*sprite_info.position.y,*/
+    /*animation.frames_end,*/
+    /*WHITE*/
+  /*)*/
 
-sprite_bitmaps:
-  .for (var a = 0; a < ANIMATIONS.size(); a++) {
-    .var animation = ANIMATIONS.get(a)
-    .pc = animation.first_frame_index*64
-    .for (var j = 0; j < animation.frames.size(); j++) {
-      .fill 64, animation.frames.get(j).raw_bytes.get(i)
-    }
-  }
+  /*lib_math_add_8bit(sprite_info.position.start_x, 12, sprite_info.position.x)*/
+  /*lib_screen_draw_decimal(*/
+    /*sprite_info.position.x,*/
+    /*sprite_info.position.y,*/
+    /*animation.first_frame_index,*/
+    /*WHITE*/
+  /*)*/
+
+  /*ldy current_frame.index*/
+  /*lda frame_counts, y*/
+  /*sta sprite_info.current_frame_total_count*/
+  /*lib_math_add_8bit(sprite_info.position.start_x, 9, sprite_info.position.x)*/
+  /*lib_screen_draw_decimal(*/
+    /*sprite_info.position.x,*/
+    /*sprite_info.position.y,*/
+    /*sprite_info.current_frame_total_count,*/
+    /*WHITE*/
+  /*)*/
+
+  /*[>advance_optimized_frame(0, animation, walker_current_frame, walker_frame_counts)<]*/
+/*[>.macro advance_optimized_frame(animation_id, animation, current_frame, frame_counts) {<]*/
+  /*ldy current_frame.counter*/
+  /*dey*/
+  /*beq actually_advance_frame*/
+  /*sty current_frame.counter*/
+  /*jmp end*/
+/*actually_advance_frame:*/
+  /*ldx current_frames + animation_id*/
+  /*inx*/
+  /*ldy current_frame.index*/
+  /*iny*/
+  /*cpx #animation.frames_end*/
+  /*bne update*/
+/*wrap_around:*/
+  /*ldx #animation.first_frame_index*/
+  /*ldy #0*/
+/*update:*/
+  /*sty current_frame.index*/
+  /*lda frame_counts, y*/
+  /*sta current_frame.counter*/
+  /*stx current_frames + animation_id*/
+  /*stx sprites.pointers + animation.sprite_id*/
+  /*jmp end*/
+/*end:*/
+/*}*/
+/*.namespace walker_current_frame {*/
+  /*counter: .byte 5*/
+  /*index: .byte 0*/
+  /*ping_pong: .byte 0*/
+/*}*/
+
+/*walker_frame_counts:*/
+  /*.byte 5, 5, 5, 5, 5, 5*/
+
+/*current_frames:*/
+  /*.for (var i = 0; i < ANIMATIONS.size(); i++) {*/
+    /*.var animation = ANIMATIONS.get(i)*/
+    /*.byte animation.first_frame_index*/
+  /*}*/
+
+/*sprite_bitmaps:*/
+  /*.for (var a = 0; a < ANIMATIONS.size(); a++) {*/
+    /*.var animation = ANIMATIONS.get(a)*/
+    /*.pc = animation.first_frame_index*64*/
+    /*.for (var j = 0; j < animation.frames.size(); j++) {*/
+      /*.fill 64, animation.frames.get(j).raw_bytes.get(i)*/
+    /*}*/
+  /*}*/
 

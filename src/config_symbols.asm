@@ -1,6 +1,8 @@
 .label VIC2 = $d000
-.label address_sprites = $3000
-.label screen_ram = $0400     // location of screen ram
+.label address_sprites = $3000 // address of sprite data
+.label screen_ram = $0400 // location of screen ram
+.label sprite_data_pointers = screen_ram + 1024 - 8
+.label sprite_ram = 192
 .label color_ram = $d800
 .label border_color = $d020
 .label background_color0 = $d021
