@@ -1,22 +1,24 @@
-TARGETS := streetw
-C1541 := /Applications/Vice64/tools/c1541
-X64 := open /Applications/Vice/x64.app
+PREFIX = main
+BINDIR := ./bin
+KICKASS := $$CLASSPATH:/Applications/KickAssembler/KickAss.jar
+JAVA := java -classpath $(KICKASS) cml.kickass.KickAssembler
+X64 := x64
 
-.PRECIOUS: %.d64
+LOGFILE = $(PREFIX).log
+PRGFILE = $(PREFIX).prg
+VSFILE = $(PREFIX).vs
 
-all: $(TARGETS)
+.PHONY: all
+all: run
 
-%.prg: %.asm
-  acme --cpu 6510 --format cbm --outfile $@ $<
+.PHONY: build
+build: main.asm
+	mkdir -p ./bin && $(JAVA) $? -log $(BINDIR)/$(LOGFILE) -o $(BINDIR)/$(PRGFILE) -vicesymbols -showmem -symbolfiledir $(BINDIR)
 
-%.d64: %.prg
-  $(C1541) -format foo,id d64 $@ -write $<
+.PHONY: run
+run: build
+	x64 -moncommands $(BINDIR)/$(VSFILE) $(BINDIR)/$(PRGFILE)
 
-%: %.d64
-  $(X64) $<
-
+.PHONY: clean
 clean:
-  rm -f $(TARGETS) *.prg *.d64
-
-  let $CLASSPATH='$CLASSPATH:/Applications/KickAssembler/KickAss.jar'
-  exec ":!mkdir -p bin & java cml.kickass.KickAssembler '" . current_file . "' -log 'bin/" . base_name . "_BuildLog.txt' -o 'bin/" . base_name . "_Compiled.prg' -vicesymbols -showmem -symbolfiledir bin && x64 -moncommands 'bin/" . base_name . ".vs' 'bin/" . base_name . "_Compiled.prg'"
+	rm -rf $(BINDIR)
