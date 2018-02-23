@@ -34,9 +34,6 @@ main:
 
 irq:
   dec $d019          // acknowledge IRQ / clear register for next interrupt
-  /*jsr color_cycle    // put color cycle on text*/
-  /*jsr play_sid       // jump to play music routine*/
-  /*jsr update_ship    // move ship*/
   jsr check_keyboard // check keyboard controls
   jsr lib_sprites_update
   jsr player_update
@@ -49,6 +46,4 @@ irq:
 #import "src/check_keyboard.asm"
 #import "src/game_data.asm"
 #import "src/config_sprites.asm"
-/*#import "src/update_player.asm"*/
-
 #import "src/config_resources.asm"
