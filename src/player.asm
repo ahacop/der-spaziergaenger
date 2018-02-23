@@ -35,14 +35,12 @@ player_init:
   lib_sprite_set_frame(player.sprite, player.up_animation)
   lib_sprite_set_color(player.sprite, ORANGE)
   lib_sprite_multicolor_enable(player.sprite, 1)
-  jsr player_set_run_up
-  rts
+  jmp player_set_run_up
 
 player_update:
   jsr player_update_state
   jsr player_update_velocity
-  jsr player_update_position
-  rts
+  jmp player_update_position
 
 player_update_state:
   // now run the state machine
