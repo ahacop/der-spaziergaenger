@@ -45,5 +45,5 @@ irq:
 #import "src/lib_sprite.asm"
 #import "src/check_keyboard.asm"
 #import "src/game_data.asm"
-#import "src/config_sprites.asm"
+#import "src/player.asm"
 #import "src/config_resources.asm"
