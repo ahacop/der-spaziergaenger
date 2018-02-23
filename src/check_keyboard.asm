@@ -43,6 +43,3 @@ exit_to_basic:
   sta $d015        // turn off all sprites
   jmp $ea81        // jmp to regular interrupt routine
   rts
-
-skip:
-  rts              // don't change Y-Coordinate
